@@ -1,0 +1,32 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Solana Pool Tracker</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <h1>Solana Pool Tracker</h1>
+    <form id="tokenForm">
+        <input type="text" placeholder="Mint address" id="mint" required>
+        <input type="text" placeholder="Name" id="name" required>
+        <input type="text" placeholder="Symbol" id="symbol" required>
+        <button type="submit">Thêm Token</button>
+    </form>
+
+    <table id="poolTable">
+        <thead>
+            <tr>
+                <th>Token</th>
+                <th>DEX</th>
+                <th>Pool</th>
+                <th>Price</th>
+                <th>Volume</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
