@@ -3,7 +3,7 @@ import json
 import requests
 
 
-# CONSTAINS
+# CONSTANTS
 ORCA_API_URL = "https://api.orca.so/v2/solana/pools"
 
 
@@ -35,18 +35,8 @@ def get_orca_pools(token_list):
                 }
                 result.append(item)
 
-        # Ghi kết quả vào file orca.json
-        # with open("orca_test.json", "w", encoding="utf-8") as f:
-        #     json.dump(result, f, ensure_ascii=False, indent=2)
-
         return result
     except Exception as e:
-        print("Orca Error:", e)
+        import logging
+        logging.error("Orca Error: %s", e)
         return []
-
-
-# if __name__ == '__main__':
-#     print("Find pool SOL")
-#     tokens = ["So11111111111111111111111111111111111111112"]
-#     result = get_orca_pools(tokens)
-#     print("Done")
