@@ -1,21 +1,57 @@
-# pool_fetcher/raydium.py
 import requests
 
+def get_all_raydium_pools_by_token_mint(token_mint):
+    url = "https://api-v3.raydium.io/pools/info/mint"
+    page = 1
+    all_pools = []
+
+    while True:
+        params = {
+            "mint1": token_mint,
+            "poolType": "all",
+            "poolSortField": "default",
+            "sortType": "desc",
+            "pageSize": 1000,
+            "page": page
+        }
+
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        pools = data.get("data", []).get("data", [])
+        if not pools:
+            break
+        all_pools.extend(pools)
+        page += 1
+
+    return all_pools
+
+def simplified_pools(pools):
+    simplified_list = [] 
+    for pool in pools:
+        output = {
+            "dex": "Raydium",
+            "tokenA": {
+                "symbol": pool.get("mintA", {}).get("symbol", "").strip(),
+                "mint": pool.get("mintA", {}).get("address", "")
+            },
+            "tokenB": {
+                "symbol": pool.get("mintB", {}).get("symbol", "").strip(),
+                "mint": pool.get("mintB", {}).get("address", "")
+            },
+            "pool_address": pool.get("id", ""),
+            "price": pool.get("price", 0),
+            "volume_24h": round(pool.get("day", {}).get("volumeQuote", 0), 2),
+            "liquidity_usd": round(pool.get("tvl", 0), 2)
+        }
+        simplified_list.append(output) 
+    return simplified_list 
+
 def get_raydium_pools(token_list):
-    try:
-        res = requests.get("https://api.raydium.io/pairs")
-        data = res.json()
-        result = []
-        for pool in data:
-            if pool['baseMint'] in token_list or pool['quoteMint'] in token_list:
-                result.append({
-                    "dex": "Raydium",
-                    "token": pool['name'],
-                    "pool_address": pool.get('lpMint'),
-                    "price": pool.get('price', 0),
-                    "volume": pool.get('volume', 0)
-                })
-        return result
-    except Exception as e:
-        print("Raydium Error:", e)
-        return []
+    result = []
+    for token in token_list:
+        relevant_pools_raw = get_all_raydium_pools_by_token_mint(token)
+        simplified_relevant_pools = simplified_pools(relevant_pools_raw)
+        result.extend(simplified_relevant_pools) 
+    return result
