@@ -105,7 +105,7 @@ def background_updater():
         if tokens:
             threading.Thread(target=update_raydium_pools, args=(tokens,), daemon=True).start()
             threading.Thread(target=update_orca_pools, args=(tokens,), daemon=True).start()
-            threading.Thread(target=update_meteora_pools, args=(tokens,), daemon=True).start()
+            #threading.Thread(target=update_meteora_pools, args=(tokens,), daemon=True).start()
         time.sleep(UPDATE_INTERVAL)
 
 def load_all_pools():
@@ -136,7 +136,7 @@ def add_tokens():
     #Get tokens list
     for line in token_input.split('\n'):
         for token in line.split(','):
-            token = token.strip().upper()
+            token = token.strip()
             if token and token not in tokens:
                 tokens.append(token)
 
@@ -156,6 +156,7 @@ def add_tokens():
 @app.route('/api/pools')
 def api_pools():
     pools = load_all_pools()
+    
     return jsonify({
         'pools': pools,
         'last_updated': datetime.now().isoformat(),
