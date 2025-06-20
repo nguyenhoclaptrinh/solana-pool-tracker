@@ -1,32 +1,209 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solana Pool Tracker</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
 </head>
 <body>
-    <h1>Solana Pool Tracker</h1>
-    <form id="tokenForm">
-        <input type="text" placeholder="Mint address" id="mint" required>
-        <input type="text" placeholder="Name" id="name" required>
-        <input type="text" placeholder="Symbol" id="symbol" required>
-        <button type="submit">Thêm Token</button>
-    </form>
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row bg-dark text-white py-3">
+            <div class="col">
+                <h1 class="text-center mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Solana Pool Tracker
+                </h1>
+                <p class="text-center text-muted mb-0">Track pools across Raydium, Orca, and Meteora</p>
+            </div>
+        </div>
 
-    <table id="poolTable">
-        <thead>
-            <tr>
-                <th>Token</th>
-                <th>DEX</th>
-                <th>Pool</th>
-                <th>Price</th>
-                <th>Volume</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+        <div class="row mt-4">
+            <!-- Token Input Section -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-coins me-2"></i>
+                            Token Address Management
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Token Input Form -->
+                        <form id="tokenForm">
+                            <div class="mb-3">
+                                <label for="tokenInput" class="form-label">Token Addresses</label>
+                                <textarea class="form-control" id="tokenInput" rows="10" 
+                                          placeholder="Enter Solana token addresses (one per line or comma separated)&#10;&#10;Examples:&#10;Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB (USDT)&#10;2FPyTwcZLUg1MDrwsyoP4D6s1tM7hAkHYRjkNb5w6Pxk (ETH)&#10;So11111111111111111111111111111111111111112 (SOL)&#10;EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v (USDC)"></textarea>
+                                <div class="form-text">
+                                    <strong>Important:</strong> Enter the actual Solana token addresses, not symbols.<br>
+                                    Maximum 100 tokens allowed. Separate with commas or new lines.
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-sync-alt me-2"></i>Update Tokens & Fetch Pools
+                            </button>
+                        </form>
 
-    <script src="/static/script.js"></script>
+                        <hr>
+
+                        <!-- Current Tokens Display -->
+                        <h6>Current Token Addresses ({{ tokens|length }}/100)</h6>
+                        <div id="tokenList" class="mb-3">
+                            {% if tokens %}
+                                {% for token in tokens %}
+                                <div class="token-item mb-2">
+                                    <small class="text-muted d-block">{{ token[:20] }}...</small>
+                                    <span class="badge bg-secondary">{{ token }}</span>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">No token addresses added yet</p>
+                            {% endif %}
+                        </div>
+
+                        <!-- Quick Add Buttons -->
+                        <h6>Quick Add Common Token Addresses</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-success btn-sm quick-add" data-tokens="So11111111111111111111111111111111111111112, EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v, Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB">SOL, USDC, USDT</button>
+                            <button class="btn btn-outline-info btn-sm quick-add" data-tokens="DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263, 7dHbWXmci3dT8UFYWYZweBLXgycu7Y3iL6trKn1Y7ARj, 7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr">BONK, stSOL, JUP</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pools Display Section -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-swimming-pool me-2"></i>
+                            Pool Information
+                        </h5>
+                        <div>
+                            <span class="badge bg-light text-dark" id="poolCount">{{ pools|length }} pools</span>
+                            <span class="badge bg-warning text-dark ms-2" id="lastUpdate">
+                                <i class="fas fa-clock me-1"></i>Auto-updating
+                            </span>
+                            <button class="btn btn-sm btn-outline-light ms-2" id="refreshPools">
+                                <i class="fas fa-refresh"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Filters -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <select class="form-select" id="dexFilter">
+                                    <option value="">All DEXes</option>
+                                    <option value="Raydium">Raydium</option>
+                                    <option value="Orca">Orca</option>
+                                    <option value="Meteora">Meteora</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" id="tokenFilter" placeholder="Filter by token address">
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-secondary w-100" id="clearFilters">
+                                    <i class="fas fa-times me-2"></i>Clear Filters
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Pools Table -->
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Token Address</th>
+                                        <th>DEX</th>
+                                        <th>Pool Address</th>
+                                        <th>Price (USD)</th>
+                                        <th>Volume (24h)</th>
+                                        <th>LP Fee</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="poolsTableBody">
+                                    {% if pools %}
+                                        {% for pool in pools %}
+                                        <tr class="pool-row" data-dex="{{ pool.dex }}" data-token="{{ pool.token }}">
+                                            <td>
+                                                <div>
+                                                    <span class="badge bg-primary">{{ pool.symbol if pool.symbol else pool.token[:8] + '...' }}</span>
+                                                    <br>
+                                                    <small class="text-muted">{{ pool.token }}</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{{ 'success' if pool.dex == 'Raydium' else 'info' if pool.dex == 'Orca' else 'warning' }}">
+                                                    {{ pool.dex }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">{{ pool.pool_address[:20] }}...</small>
+                                            </td>
+                                            <td>
+                                                <strong>${{ "%.6f"|format(pool.price) }}</strong>
+                                            </td>
+                                            <td>
+                                                <span class="text-success">${{ "{:,.0f}".format(pool.volume) }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="text-info">{{ "%.4f"|format(pool.lp_fee) }}%</span>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('{{ pool.pool_address }}')">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted py-4">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                No pools found. Add some token addresses to get started!
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast for notifications -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <strong class="me-auto">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        // WebSocket: Listen for pool updates
+        const socket = io();
+        socket.on('pools_updated', function() {
+            // When server notifies, fetch new pools and update UI
+            if (typeof refreshPools === 'function') {
+                refreshPools();
+            }
+        });
+    </script>
 </body>
 </html>
