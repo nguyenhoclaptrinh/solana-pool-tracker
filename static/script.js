@@ -135,11 +135,11 @@ async function refreshPools() {
 function updatePoolsTableDisplay(pools) {
     const tbody = document.getElementById('poolsTableBody');
     const poolCount = document.getElementById('poolCount');
-    
+
     if (poolCount) {
         poolCount.textContent = `${pools.length} pools`;
     }
-    
+
     if (pools.length === 0) {
         tbody.innerHTML = `
             <tr>
@@ -151,18 +151,19 @@ function updatePoolsTableDisplay(pools) {
         `;
         return;
     }
-    
+
     tbody.innerHTML = pools.map(pool => {
         const dexClass = pool.dex === 'Raydium' ? 'success' : 
-                        pool.dex === 'Orca' ? 'info' : 'warning';
-        
+                         pool.dex === 'Orca' ? 'info' : 'warning';
+
         return `
-            <tr class="pool-row" data-dex="${pool.dex}" data-token="${pool.token}">
+            <tr class="pool-row" data-dex="${pool.dex}" data-tokena="${pool.tokenA.mint}" data-tokenb="${pool.tokenB.mint}">
                 <td>
                     <div>
-                        <span class="badge bg-primary">${pool.symbol || pool.token.substring(0, 8) + '...'}</span>
+                        <span class="badge bg-primary">${pool.tokenA.symbol}</span>
+                        <span class="badge bg-secondary">${pool.tokenB.symbol}</span>
                         <br>
-                        <small class="text-muted">${pool.token}</small>
+                        <small class="text-muted">${pool.tokenA.mint.substring(0, 8)}... / ${pool.tokenB.mint.substring(0, 8)}...</small>
                     </div>
                 </td>
                 <td>
@@ -175,10 +176,10 @@ function updatePoolsTableDisplay(pools) {
                     <strong>$${pool.price.toFixed(6)}</strong>
                 </td>
                 <td>
-                    <span class="text-success">$${pool.volume.toLocaleString()}</span>
+                    <span class="text-success">$${pool.volume_24h ? pool.volume_24h.toLocaleString() : 0}</span>
                 </td>
                 <td>
-                    <span class="text-info">${(pool.lp_fee * 100).toFixed(4)}%</span>
+                    <span class="text-info">$${pool.liquidity_usd ? pool.liquidity_usd.toLocaleString() : 0}</span>
                 </td>
                 <td>
                     <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('${pool.pool_address}')">

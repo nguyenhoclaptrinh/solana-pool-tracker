@@ -124,19 +124,20 @@
                                         <th>Pool Address</th>
                                         <th>Price (USD)</th>
                                         <th>Volume (24h)</th>
-                                        <th>LP Fee</th>
+                                        <th>Liquidity (USD)</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="poolsTableBody">
                                     {% if pools %}
                                         {% for pool in pools %}
-                                        <tr class="pool-row" data-dex="{{ pool.dex }}" data-token="{{ pool.token }}">
+                                        <tr class="pool-row" data-dex="{{ pool.dex }}" data-tokena="{{ pool.tokenA.mint }}" data-tokenb="{{ pool.tokenB.mint }}">
                                             <td>
                                                 <div>
-                                                    <span class="badge bg-primary">{{ pool.symbol if pool.symbol else pool.token[:8] + '...' }}</span>
+                                                    <span class="badge bg-primary">{{ pool.tokenA.symbol }}</span>
+                                                    <span class="badge bg-secondary">{{ pool.tokenB.symbol }}</span>
                                                     <br>
-                                                    <small class="text-muted">{{ pool.token }}</small>
+                                                    <small class="text-muted">{{ pool.tokenA.mint[:8] }}... / {{ pool.tokenB.mint[:8] }}...</small>
                                                 </div>
                                             </td>
                                             <td>
@@ -151,10 +152,10 @@
                                                 <strong>${{ "%.6f"|format(pool.price) }}</strong>
                                             </td>
                                             <td>
-                                                <span class="text-success">${{ "{:,.0f}".format(pool.volume) }}</span>
+                                                <span class="text-success">${{ "{:,.0f}".format(pool.volume_24h) }}</span>
                                             </td>
                                             <td>
-                                                <span class="text-info">{{ "%.4f"|format(pool.lp_fee) }}%</span>
+                                                <span class="text-info">${{ "{:,.0f}".format(pool.liquidity_usd) }}</span>
                                             </td>
                                             <td>
                                                 <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('{{ pool.pool_address }}')">
