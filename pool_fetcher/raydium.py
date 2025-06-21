@@ -1,3 +1,4 @@
+# pool_fetcher/raydium.py
 import requests
 
 def get_all_raydium_pools_by_token_mint(token_mint):
@@ -54,5 +55,5 @@ def get_raydium_pools(token_list):
     for token in token_list:
         relevant_pools_raw = get_all_raydium_pools_by_token_mint(token)
         simplified_relevant_pools = simplified_pools(relevant_pools_raw)
-        result.append(simplified_relevant_pools) 
+        result.extend(simplified_relevant_pools)  # Sử dụng extend thay vì append
     return result
