@@ -1,11 +1,21 @@
 // Solana Pool Tracker JavaScript - With WebSocket Real-time Updates
-
+let socket;
 let updateInterval;
 let lastUpdateTime = null;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     initializeEventListeners();
+    // Kết nối SocketIO để nhận cập nhật thời gian thực
+    socket = io();
+    socket.on('connect', () => {
+        console.log('Connected to SocketIO server');
+        refreshPools(); // Làm mới bảng ngay khi kết nối
+    });
+    socket.on('pools_updated', (data) => {
+        console.log('Pools updated for DEX:', data.dex);
+        refreshPools(); // Làm mới bảng khi nhận sự kiện
+    });
 });
 
 // Initialize all event listeners
@@ -199,10 +209,11 @@ function applyFilters() {
     
     rows.forEach(row => {
         const dex = row.dataset.dex;
-        const token = row.dataset.token.toLowerCase();
+        const tokenA = row.dataset.tokena.toLowerCase();
+        const tokenB = row.dataset.tokenb.toLowerCase();
         
         const dexMatch = !dexFilter || dex === dexFilter;
-        const tokenMatch = !tokenFilter || token.includes(tokenFilter);
+        const tokenMatch = !tokenFilter || tokenA.includes(tokenFilter) || tokenB.includes(tokenFilter);
         
         row.style.display = dexMatch && tokenMatch ? '' : 'none';
     });
@@ -268,6 +279,9 @@ function updateLastUpdateTime() {
 function stopRealTimeUpdates() {
     if (updateInterval) {
         clearInterval(updateInterval);
+    }
+    if (socket) {
+        socket.disconnect();
     }
 }
 
