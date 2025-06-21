@@ -5,11 +5,14 @@ import requests
 
 # CONSTANTS
 ORCA_API_URL = "https://api.orca.so/v2/solana/pools"
+SOL_ADDR = "So11111111111111111111111111111111111111112"
 
 
 def get_orca_pools(token_list):
     try:
-        res = requests.get(ORCA_API_URL)
+        res = requests.get(ORCA_API_URL, params={
+            "token": SOL_ADDR
+        })
         pools = res.json().get("data", [])
 
         result = []
