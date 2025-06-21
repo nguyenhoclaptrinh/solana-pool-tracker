@@ -105,7 +105,7 @@ def background_updater():
         if tokens:
             threading.Thread(target=update_raydium_pools, args=(tokens,), daemon=True).start()
             threading.Thread(target=update_orca_pools, args=(tokens,), daemon=True).start()
-            #threading.Thread(target=update_meteora_pools, args=(tokens,), daemon=True).start()
+            threading.Thread(target=update_meteora_pools, args=(tokens,), daemon=True).start()
         time.sleep(UPDATE_INTERVAL)
 
 def load_all_pools():
