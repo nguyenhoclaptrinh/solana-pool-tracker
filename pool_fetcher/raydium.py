@@ -7,6 +7,7 @@ def get_all_raydium_pools_by_token_mint(token_mint):
 
     while True:
         params = {
+            "mint2": "So11111111111111111111111111111111111111112",
             "mint1": token_mint,
             "poolType": "all",
             "poolSortField": "default",
