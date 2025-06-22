@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('pools', JSON.stringify(data.pools));
         lastUpdateTime = new Date().toISOString();
         resetUpdateTimer();
-        applyFilters(); // Áp dụng filter sau mỗi cập nhật
+        applyFilters();
     });
     socket.on('connect_error', () => {
         console.log('SocketIO connection failed, falling back to polling');
@@ -90,7 +90,6 @@ async function handleTokenUpdate(e) {
         
         if (response.ok) {
             showNotification(data.message, 'success');
-            updateTokenList(data.tokens);
             await refreshPools();
         } else {
             showNotification(data.error, 'error');
@@ -111,27 +110,6 @@ function handleQuickAdd(e) {
     tokenInput.value = tokens;
     const form = document.getElementById('tokenForm');
     form.dispatchEvent(new Event('submit'));
-}
-
-function updateTokenList(tokens) {
-    const tokenList = document.getElementById('tokenList');
-    const tokenCount = document.querySelector('h6');
-    
-    if (tokenCount) {
-        tokenCount.textContent = `Current Token Addresses (${tokens.length}/100)`;
-    }
-    
-    if (tokens.length === 0) {
-        tokenList.innerHTML = '<p class="text-muted">No token addresses found</p>';
-        return;
-    }
-    
-    tokenList.innerHTML = tokens.map(token => `
-        <div class="token-item mb-2">
-            <small class="text-muted d-block">${token.substring(0, 20)}...</small>
-            <span class="badge bg-secondary">${token}</span>
-        </div>
-    `).join('');
 }
 
 async function refreshPools(poolsData) {
@@ -168,7 +146,7 @@ function updatePoolsTableDisplay(pools) {
         return;
     }
 
-    lastPools = [...pools]; // Cập nhật lastPools với dữ liệu mới
+    lastPools = [...pools];
     const currentRows = lastPools.map(p => p.pool_address);
     const newRows = pools.map(p => p.pool_address);
     if (JSON.stringify(currentRows) !== JSON.stringify(newRows)) {
@@ -209,18 +187,18 @@ function updatePoolsTableDisplay(pools) {
                     </tr>
                 `;
             }).join('');
-            applyFilters(); // Áp dụng filter ngay sau khi cập nhật DOM
+            applyFilters();
         });
     }
 }
+
 function applyFilters() {
     const dexFilter = document.getElementById('dexFilter').value;
     const tokenFilter = document.getElementById('tokenFilter').value.toLowerCase();
     const sortFilter = document.getElementById('sortFilter')?.value;
 
-    let filteredPools = lastPools.slice(); // copy dữ liệu gốc
+    let filteredPools = lastPools.slice();
 
-    // Lọc theo DEX và token
     filteredPools = filteredPools.filter(pool => {
         const dexMatch = !dexFilter || pool.dex === dexFilter;
         const tokenA = pool.tokenA.mint.toLowerCase();
@@ -229,7 +207,6 @@ function applyFilters() {
         return dexMatch && tokenMatch;
     });
 
-    // Sắp xếp
     if (sortFilter === 'price') {
         filteredPools.sort((a, b) => b.price - a.price);
     } else if (sortFilter === 'volume_24h') {
@@ -238,7 +215,6 @@ function applyFilters() {
         filteredPools.sort((a, b) => b.liquidity_usd - a.liquidity_usd);
     }
 
-    // Cập nhật DOM
     const tbody = document.getElementById('poolsTableBody');
     const poolCount = document.getElementById('poolCount');
     if (poolCount) {
@@ -358,4 +334,4 @@ function stopRealTimeUpdates() {
 
 window.addEventListener('beforeunload', stopRealTimeUpdates);
 
-refreshPools(); // Lấy dữ liệu ban đầu để thiết lập lastUpdateTime  
+refreshPools();
