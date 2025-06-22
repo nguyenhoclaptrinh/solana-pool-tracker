@@ -49,7 +49,7 @@ def update_raydium_pools(tokens):
         print(f"[UPDATE] Raydium updating at {datetime.now()}")
         pools = get_raydium_pools(tokens)
         save_pools_file(pools, POOLS_RAYDIUM_FILE)
-        socketio.emit('pools_updated', {'dex': 'Raydium', 'pools': load_all_pools()})
+        socketio.emit('pools_updated', {'dex': 'Raydium', 'pools': load_all_pools(), 'last_updated': datetime.now().isoformat()})
         print(f"[UPDATE] Raydium pools updated at {datetime.now()}")
     except Exception as e:
         print(f"[ERROR] Raydium update error: {e}")
@@ -64,7 +64,7 @@ def update_orca_pools(tokens):
         print(f"[UPDATE] Orca updating at {datetime.now()}")
         pools = get_orca_pools(tokens)
         save_pools_file(pools, POOLS_ORCA_FILE)
-        socketio.emit('pools_updated', {'dex': 'Orca', 'pools': load_all_pools()})
+        socketio.emit('pools_updated', {'dex': 'Orca', 'pools': load_all_pools(), 'last_updated': datetime.now().isoformat()})
         print(f"[UPDATE] Orca pools updated at {datetime.now()}")
     except Exception as e:
         print(f"[ERROR] Orca update error: {e}")
@@ -79,7 +79,7 @@ def update_meteora_pools(tokens):
         print(f"[UPDATE] Meteora updating at {datetime.now()}")
         pools = get_meteora_pools(tokens)
         save_pools_file(pools, POOLS_METEORA_FILE)
-        socketio.emit('pools_updated', {'dex': 'Meteora', 'pools': load_all_pools()})
+        socketio.emit('pools_updated', {'dex': 'Meteora', 'pools': load_all_pools(), 'last_updated': datetime.now().isoformat()})
         print(f"[UPDATE] Meteora pools updated at {datetime.now()}")
     except Exception as e:
         print(f"[ERROR] Meteora update error: {e}")
@@ -147,7 +147,7 @@ def api_pools():
     pools = load_all_pools()
     return jsonify({
         'pools': pools,
-        'last_updated': datetime.now().isoformat(),
+        'last_updated': datetime.now().isoformat(),  # Thêm thời gian cập nhật
         'total_pools': len(pools)
     })
 

@@ -1,75 +1,37 @@
-<!-- templates/index.html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Solana Pool Tracker</title>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-    <h1>Solana Pool Tracker</h1>
-    <form id="tokenForm">
-        <input type="text" placeholder="Mint address" id="mint" required>
-        <input type="text" placeholder="Name" id="name" required>
-        <input type="text" placeholder="Symbol" id="symbol" required>
-        <button type="submit">Thêm Token</button>
-    </form>
-
-    <table id="poolTable">
-        <thead>
-            <tr>
-                <th>Token</th>
-                <th>DEX</th>
-                <th>Pool</th>
-                <th>Price</th>
-                <th>Volume</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-
-    <script src="/static/script.js"></script>
-</body>
-</html> -->
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solana Pool Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="/static/script.js" defer></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link id="favicon" rel="icon"
         href="data:image/jpeg;base64,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"
-        type="image/x-icon">
-
+        type="image/jpeg">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
 </head>
 
 <body>
     <div class="container-fluid">
         <!-- Header -->
-        <div class="row bg-dark text-white py-3">
-            <div class="col">
-                <h1 class="text-center mb-0">
-                    <i class="fas fa-chart-line me-2"></i>
-                    Solana Pool Tracker
+        <div class="row bg-dark text-white py-4 header">
+            <div class="col text-center">
+                <h1 class="mb-0">
+                    <i class="fas fa-chart-line"></i> Solana Pool Tracker
                 </h1>
-                <p class="text-center text-muted mb-0">Track pools across Raydium, Orca, and Meteora</p>
+                <p class="text-muted mb-0">Track pools across Raydium, Orca, and Meteora</p>
             </div>
         </div>
 
         <div class="row mt-4">
             <!-- Token Input Section -->
             <div class="col-md-4">
-                <div class="card">
+                <div class="card token-card">
                     <div class="card-header bg-primary text-white">
                         <h5 class="mb-0">
-                            <i class="fas fa-coins me-2"></i>
-                            Token Address Management
+                            <i class="fas fa-coins"></i> Token Address Management
                         </h5>
                     </div>
                     <div class="card-body">
@@ -77,16 +39,21 @@
                         <form id="tokenForm">
                             <div class="mb-3">
                                 <label for="tokenInput" class="form-label">Token Addresses</label>
-                                <textarea class="form-control" id="tokenInput" rows="10"
-                                    placeholder="Enter Solana token addresses (one per line or comma separated)&#10;&#10;Examples:&#10;Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB (USDT)&#10;2FPyTwcZLUg1MDrwsyoP4D6s1tM7hAkHYRjkNb5w6Pxk (ETH)&#10;So11111111111111111111111111111111111111112 (SOL)&#10;EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v (USDC)"></textarea>
+                                <textarea class="form-control" id="tokenInput" rows="10" placeholder="Enter Solana token addresses (one per line or comma separated)
+
+Examples:
+Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB (USDT)
+2FPyTwcZLUg1MDrwsyoP4D6s1tM7hAkHYRjkNb5w6Pxk (ETH)
+So11111111111111111111111111111111111111112 (SOL)
+EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v (USDC)"></textarea>
                                 <div class="form-text">
                                     <strong>Important:</strong> Enter the actual Solana token addresses, not
                                     symbols.<br>
                                     Maximum 100 tokens allowed. Separate with commas or new lines.
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="fas fa-sync-alt me-2"></i>Update Tokens & Fetch Pools
+                            <button type="submit" class="btn btn-primary w-100" id="updateButton">
+                                <i class="fas fa-sync-alt"></i> Update Tokens & Fetch Pools
                             </button>
                         </form>
 
@@ -123,26 +90,22 @@
 
             <!-- Pools Display Section -->
             <div class="col-md-8">
-                <div class="card">
+                <div class="card pool-card">
                     <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
-                            <i class="fas fa-swimming-pool me-2"></i>
-                            Pool Information
+                            <i class="fas fa-swimming-pool"></i> Pool Information
                         </h5>
                         <div>
                             <span class="badge bg-light text-dark" id="poolCount">{{ pools|length }} pools</span>
-                            <span class="badge bg-warning text-dark ms-2" id="lastUpdate">
-                                <i class="fas fa-clock me-1"></i>Auto-updating
+                            <span class="badge bg-warning text-dark ms-2" id="countdownTimer" style="display:none;">
+                                <i class="fas fa-clock"></i> <span id="timerDisplay">10</span>s
                             </span>
-                            <button class="btn btn-sm btn-outline-light ms-2" id="refreshPools">
-                                <i class="fas fa-refresh"></i> Refresh
-                            </button>
                         </div>
                     </div>
                     <div class="card-body">
                         <!-- Filters -->
                         <div class="row mb-3">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <select class="form-select" id="dexFilter">
                                     <option value="">All DEXes</option>
                                     <option value="Raydium">Raydium</option>
@@ -150,13 +113,21 @@
                                     <option value="Meteora">Meteora</option>
                                 </select>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <input type="text" class="form-control" id="tokenFilter"
                                     placeholder="Filter by token address">
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
+                                <select class="form-select" id="sortFilter">
+                                    <option value="">Sort by (None)</option>
+                                    <option value="price">Price</option>
+                                    <option value="liquidity_usd">Liquidity (TVL)</option>
+                                    <option value="volume_24h">Volume (24h)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
                                 <button class="btn btn-outline-secondary w-100" id="clearFilters">
-                                    <i class="fas fa-times me-2"></i>Clear Filters
+                                    <i class="fas fa-times"></i> Clear Filters
                                 </button>
                             </div>
                         </div>
@@ -179,7 +150,9 @@
                                     {% if pools %}
                                     {% for pool in pools %}
                                     <tr class="pool-row" data-dex="{{ pool.dex }}" data-tokena="{{ pool.tokenA.mint }}"
-                                        data-tokenb="{{ pool.tokenB.mint }}">
+                                        data-tokenb="{{ pool.tokenB.mint }}" data-pool-address="{{ pool.pool_address }}"
+                                        data-price="{{ pool.price }}" data-volume_24h="{{ pool.volume_24h }}"
+                                        data-liquidity_usd="{{ pool.liquidity_usd }}">
                                         <td>
                                             <div>
                                                 <span class="badge bg-primary">{{ pool.tokenA.symbol }}</span>
@@ -218,8 +191,8 @@
                                     {% else %}
                                     <tr>
                                         <td colspan="7" class="text-center text-muted py-4">
-                                            <i class="fas fa-info-circle me-2"></i>
-                                            No pools found. Add some token addresses to get started!
+                                            <i class="fas fa-info-circle"></i> No pools found. Add some token addresses
+                                            to get started!
                                         </td>
                                     </tr>
                                     {% endif %}
@@ -247,14 +220,12 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
-    <script src="/socket.io/socket.io.js"></script>
     <script>
         // WebSocket: Listen for pool updates
         const socket = io();
-        socket.on('pools_updated', function () {
-            // When server notifies, fetch new pools and update UI
+        socket.on('pools_updated', function (data) {
             if (typeof refreshPools === 'function') {
-                refreshPools();
+                refreshPools(data.pools);
             }
         });
     </script>
