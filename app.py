@@ -47,7 +47,7 @@ def update_raydium_pools(tokens):
         return
     try:
         print(f"[UPDATE] Raydium updating at {datetime.now()}")
-        pools = get_raydium_pools(tokens)
+        pools = get_raydium_pools(tokens) if tokens else []
         save_pools_file(pools, POOLS_RAYDIUM_FILE)
         socketio.emit('pools_updated', {'dex': 'Raydium', 'pools': load_all_pools(), 'last_updated': datetime.now().isoformat()})
         print(f"[UPDATE] Raydium pools updated at {datetime.now()}")
@@ -62,7 +62,7 @@ def update_orca_pools(tokens):
         return
     try:
         print(f"[UPDATE] Orca updating at {datetime.now()}")
-        pools = get_orca_pools(tokens)
+        pools = get_orca_pools(tokens) if tokens else []
         save_pools_file(pools, POOLS_ORCA_FILE)
         socketio.emit('pools_updated', {'dex': 'Orca', 'pools': load_all_pools(), 'last_updated': datetime.now().isoformat()})
         print(f"[UPDATE] Orca pools updated at {datetime.now()}")
@@ -77,7 +77,7 @@ def update_meteora_pools(tokens):
         return
     try:
         print(f"[UPDATE] Meteora updating at {datetime.now()}")
-        pools = get_meteora_pools(tokens)
+        pools = get_meteora_pools(tokens) if tokens else []
         save_pools_file(pools, POOLS_METEORA_FILE)
         socketio.emit('pools_updated', {'dex': 'Meteora', 'pools': load_all_pools(), 'last_updated': datetime.now().isoformat()})
         print(f"[UPDATE] Meteora pools updated at {datetime.now()}")
@@ -95,6 +95,11 @@ def background_updater():
             threading.Thread(target=update_raydium_pools, args=(tokens,), daemon=True).start()
             threading.Thread(target=update_orca_pools, args=(tokens,), daemon=True).start()
             threading.Thread(target=update_meteora_pools, args=(tokens,), daemon=True).start()
+        else:
+            save_pools_file([], POOLS_RAYDIUM_FILE)
+            save_pools_file([], POOLS_ORCA_FILE)
+            save_pools_file([], POOLS_METEORA_FILE)
+            socketio.emit('pools_updated', {'dex': 'All', 'pools': [], 'last_updated': datetime.now().isoformat()})
         update_flag.clear()
         time.sleep(UPDATE_INTERVAL)
 
@@ -147,7 +152,7 @@ def api_pools():
     pools = load_all_pools()
     return jsonify({
         'pools': pools,
-        'last_updated': datetime.now().isoformat(),  # Thêm thời gian cập nhật
+        'last_updated': datetime.now().isoformat(),
         'total_pools': len(pools)
     })
 

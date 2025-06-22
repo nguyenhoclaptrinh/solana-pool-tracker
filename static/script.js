@@ -1,4 +1,3 @@
-// static/script.js
 let socket;
 let updateInterval;
 let lastUpdateTime = null;
@@ -22,8 +21,9 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Pools updated for DEX:', data.dex, 'Total pools:', data.pools.length);
         updatePoolsTableDisplay(data.pools);
         localStorage.setItem('pools', JSON.stringify(data.pools));
-        lastUpdateTime = new Date().toISOString(); // Cập nhật thời gian từ server
+        lastUpdateTime = new Date().toISOString();
         resetUpdateTimer();
+        applyFilters(); // Áp dụng filter sau mỗi cập nhật
     });
     socket.on('connect_error', () => {
         console.log('SocketIO connection failed, falling back to polling');
@@ -68,6 +68,7 @@ async function handleTokenUpdate(e) {
     
     if (!tokens) {
         showNotification('Please enter token addresses', 'error');
+        updatePoolsTableDisplay([]);
         return;
     }
     
@@ -90,11 +91,14 @@ async function handleTokenUpdate(e) {
         if (response.ok) {
             showNotification(data.message, 'success');
             updateTokenList(data.tokens);
+            await refreshPools();
         } else {
             showNotification(data.error, 'error');
+            updatePoolsTableDisplay([]);
         }
     } catch (error) {
         showNotification('Error updating tokens: ' + error.message, 'error');
+        updatePoolsTableDisplay([]);
     } finally {
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
@@ -136,7 +140,7 @@ async function refreshPools(poolsData) {
         const data = await response.json();
         updatePoolsTableDisplay(poolsData || data.pools);
         localStorage.setItem('pools', JSON.stringify(data.pools));
-        lastUpdateTime = data.last_updated || new Date().toISOString(); // Đảm bảo có giá trị mặc định
+        lastUpdateTime = data.last_updated || new Date().toISOString();
         updateLastUpdateTime();
     } catch (error) {
         console.error('Error refreshing pools:', error);
@@ -164,6 +168,7 @@ function updatePoolsTableDisplay(pools) {
         return;
     }
 
+    lastPools = [...pools]; // Cập nhật lastPools với dữ liệu mới
     const currentRows = lastPools.map(p => p.pool_address);
     const newRows = pools.map(p => p.pool_address);
     if (JSON.stringify(currentRows) !== JSON.stringify(newRows)) {
@@ -172,7 +177,7 @@ function updatePoolsTableDisplay(pools) {
                 const dexClass = pool.dex === 'Raydium' ? 'success' : 
                                 pool.dex === 'Orca' ? 'info' : 'warning';
                 return `
-                    <tr class="pool-row fade-in" data-dex="${pool.dex}" data-tokena="${pool.tokenA.mint}" data-tokenb="${pool.tokenB.mint}" data-pool-address="${pool.pool_address}" data-price="${pool.price}" data-volume_24h="${pool.volume_24h}" data-liquidity_usd="${pool.liquidity_usd}">
+                    <tr class="pool-row fade-in" data-dex="${pool.dex.trim()}" data-tokena="${pool.tokenA.mint}" data-tokenb="${pool.tokenB.mint}" data-pool-address="${pool.pool_address}" data-price="${pool.price}" data-volume_24h="${pool.volume_24h}" data-liquidity_usd="${pool.liquidity_usd}">
                         <td>
                             <div>
                                 <span class="badge bg-primary">${pool.tokenA.symbol}</span>
@@ -204,47 +209,36 @@ function updatePoolsTableDisplay(pools) {
                     </tr>
                 `;
             }).join('');
-            applyFilters();
+            applyFilters(); // Áp dụng filter ngay sau khi cập nhật DOM
         });
     }
-    lastPools = pools;
 }
-
 function applyFilters() {
     const dexFilter = document.getElementById('dexFilter').value;
     const tokenFilter = document.getElementById('tokenFilter').value.toLowerCase();
-    const sortFilter = document.getElementById('sortFilter').value;
-    const rows = document.querySelectorAll('.pool-row');
-    let filteredPools = Array.from(rows).map(row => {
-        return {
-            element: row,
-            dex: row.dataset.dex,
-            tokenA: row.dataset.tokena.toLowerCase(),
-            tokenB: row.dataset.tokenb.toLowerCase(),
-            pool_address: row.dataset.poolAddress,
-            price: parseFloat(row.dataset.price) || 0,
-            volume_24h: parseFloat(row.dataset.volume_24h) || 0,
-            liquidity_usd: parseFloat(row.dataset.liquidity_usd) || 0
-        };
-    });
+    const sortFilter = document.getElementById('sortFilter')?.value;
 
-    // Áp dụng filter
+    let filteredPools = lastPools.slice(); // copy dữ liệu gốc
+
+    // Lọc theo DEX và token
     filteredPools = filteredPools.filter(pool => {
         const dexMatch = !dexFilter || pool.dex === dexFilter;
-        const tokenMatch = !tokenFilter || pool.tokenA.includes(tokenFilter) || pool.tokenB.includes(tokenFilter);
+        const tokenA = pool.tokenA.mint.toLowerCase();
+        const tokenB = pool.tokenB.mint.toLowerCase();
+        const tokenMatch = !tokenFilter || tokenA.includes(tokenFilter) || tokenB.includes(tokenFilter);
         return dexMatch && tokenMatch;
     });
 
     // Sắp xếp
     if (sortFilter === 'price') {
         filteredPools.sort((a, b) => b.price - a.price);
-    } else if (sortFilter === 'liquidity_usd') {
-        filteredPools.sort((a, b) => b.liquidity_usd - a.liquidity_usd);
     } else if (sortFilter === 'volume_24h') {
         filteredPools.sort((a, b) => b.volume_24h - a.volume_24h);
+    } else if (sortFilter === 'liquidity_usd') {
+        filteredPools.sort((a, b) => b.liquidity_usd - a.liquidity_usd);
     }
 
-    // Cập nhật hiển thị
+    // Cập nhật DOM
     const tbody = document.getElementById('poolsTableBody');
     const poolCount = document.getElementById('poolCount');
     if (poolCount) {
@@ -252,7 +246,32 @@ function applyFilters() {
     }
 
     requestAnimationFrame(() => {
-        tbody.innerHTML = filteredPools.map(pool => pool.element.outerHTML).join('');
+        tbody.innerHTML = filteredPools.map(pool => {
+            const dexClass = pool.dex === 'Raydium' ? 'success' :
+                             pool.dex === 'Orca' ? 'info' : 'warning';
+            return `
+                <tr class="pool-row" data-dex="${pool.dex}" data-tokena="${pool.tokenA.mint}" data-tokenb="${pool.tokenB.mint}">
+                    <td>
+                        <div>
+                            <span class="badge bg-primary">${pool.tokenA.symbol}</span>
+                            <span class="badge bg-secondary">${pool.tokenB.symbol}</span>
+                            <br>
+                            <small class="text-muted">${pool.tokenA.mint.substring(0, 8)}... / ${pool.tokenB.mint.substring(0, 8)}...</small>
+                        </div>
+                    </td>
+                    <td><span class="badge bg-${dexClass}">${pool.dex}</span></td>
+                    <td><small class="text-muted">${pool.pool_address.substring(0, 20)}...</small></td>
+                    <td><strong>$${pool.price.toFixed(8)}</strong></td>
+                    <td><span class="text-success">$${pool.volume_24h?.toLocaleString() || 0}</span></td>
+                    <td><span class="text-info">$${pool.liquidity_usd?.toLocaleString() || 0}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('${pool.pool_address}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     });
 }
 
@@ -281,7 +300,7 @@ function showNotification(message, type = 'info') {
         toastElement.className = `toast bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} text-white`;
         const bsToast = new bootstrap.Toast(toastElement);
         bsToast.show();
-    }
+    }   
 }
 
 function updateLastUpdateTime() {
@@ -307,7 +326,7 @@ function updateLastUpdateTime() {
 }
 
 function startUpdateTimer() {
-    clearInterval(updateTimerInterval); // Xóa interval cũ nếu có
+    clearInterval(updateTimerInterval);
     updateTimerInterval = setInterval(() => {
         const now = new Date();
         if (lastUpdateTime) {
@@ -323,7 +342,7 @@ function startUpdateTimer() {
 }
 
 function resetUpdateTimer() {
-    lastUpdateTime = new Date().toISOString(); // Đặt lại thời gian hiện tại
+    lastUpdateTime = new Date().toISOString();
     startUpdateTimer();
 }
 
@@ -339,5 +358,4 @@ function stopRealTimeUpdates() {
 
 window.addEventListener('beforeunload', stopRealTimeUpdates);
 
-// Khởi động timer khi tải trang
-refreshPools(); // Lấy dữ liệu ban đầu để thiết lập lastUpdateTime
+refreshPools(); // Lấy dữ liệu ban đầu để thiết lập lastUpdateTime  
