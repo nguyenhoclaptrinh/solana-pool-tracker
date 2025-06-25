@@ -100,7 +100,6 @@ def background_updater():
             save_pools_file([], POOLS_ORCA_FILE)
             save_pools_file([], POOLS_METEORA_FILE)
             socketio.emit('pools_updated', {'dex': 'All', 'pools': [], 'last_updated': datetime.now().isoformat()})
-        update_flag.clear()
         time.sleep(UPDATE_INTERVAL)
 
 def load_all_pools():
