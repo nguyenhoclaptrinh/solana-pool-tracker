@@ -16,7 +16,7 @@ TOKENS_FILE = 'data/tokens.txt'
 POOLS_RAYDIUM_FILE = 'data/pools_raydium.json'
 POOLS_ORCA_FILE = 'data/pools_orca.json'
 POOLS_METEORA_FILE = 'data/pools_meteora.json'
-UPDATE_INTERVAL = 5
+UPDATE_INTERVAL = 1
 update_flag = threading.Event()
 
 raydium_lock = threading.Lock()
