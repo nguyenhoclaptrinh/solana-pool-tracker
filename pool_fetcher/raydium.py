@@ -1,20 +1,31 @@
 import requests
 
+SOL_MINT = "So11111111111111111111111111111111111111112"
+
 def get_all_raydium_pools_by_token_mint(token_mint):
     url = "https://api-v3.raydium.io/pools/info/mint"
     page = 1
     all_pools = []
-
     while True:
-        params = {
-            "mint2": "So11111111111111111111111111111111111111112",
-            "mint1": token_mint,
-            "poolType": "all",
-            "poolSortField": "default",
-            "sortType": "desc",
-            "pageSize": 1000,
-            "page": page
-        }
+        if token_mint == SOL_MINT:
+            params = {
+                "mint1": SOL_MINT,
+                "poolType": "all",
+                "poolSortField": "default",
+                "sortType": "desc",
+                "pageSize": 1000,
+                "page": page
+            }
+        else:
+            params = {
+                "mint1": token_mint,
+                "mint2": SOL_MINT,
+                "poolType": "all",
+                "poolSortField": "default",
+                "sortType": "desc",
+                "pageSize": 1000,
+                "page": page
+            }
 
         response = requests.get(url, params=params)
         response.raise_for_status()
