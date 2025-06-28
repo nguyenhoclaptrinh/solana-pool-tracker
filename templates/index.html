@@ -81,8 +81,13 @@
                         <form id="tokenForm">
                             <div class="mb-3">
                                 <label for="tokenInput" class="form-label">Token Addresses</label>
-                                <textarea class="form-control" id="tokenInput" rows="10"
-                                    placeholder="Enter Solana token addresses (one per line or comma separated)&#10;&#10;Examples:&#10;Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB (USDT)&#10;2FPyTwcZLUg1MDrwsyoP4D6s1tM7hAkHYRjkNb5w6Pxk (ETH)&#10;So11111111111111111111111111111111111111112 (SOL)&#10;EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v (USDC)"></textarea>
+                                <textarea class="form-control" id="tokenInput" rows="10" placeholder="Enter Solana token addresses (one per line or comma separated)
+
+Examples:
+Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB (USDT)
+2FPyTwcZLUg1MDrwsyoP4D6s1tM7hAkHYRjkNb5w6Pxk (ETH)
+So11111111111111111111111111111111111111112 (SOL)
+EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v (USDC)"></textarea>
                                 <div class="form-text">
                                     <strong>Important:</strong> Enter the actual Solana token addresses, not
                                     symbols.<br>
@@ -95,21 +100,6 @@
                         </form>
 
                         <hr>
-
-                        <!-- Current Tokens Display -->
-                        <h6>Current Token Addresses ({{ tokens|length }}/100)</h6>
-                        <div id="tokenList" class="mb-3">
-                            {% if tokens %}
-                            {% for token in tokens %}
-                            <div class="token-item mb-2">
-                                <small class="text-muted d-block">{{ token[:20] }}...</small>
-                                <span class="badge bg-secondary">{{ token }}</span>
-                            </div>
-                            {% endfor %}
-                            {% else %}
-                            <p class="text-muted">No token addresses added yet</p>
-                            {% endif %}
-                        </div>
 
                         <!-- Quick Add Buttons -->
                         <h6>Quick Add Common Token Addresses</h6>
@@ -159,9 +149,12 @@
                                     placeholder="Filter by token address">
                             </div>
                             <div class="col-md-4">
-                                <button class="btn btn-outline-secondary w-100" id="clearFilters">
-                                    <i class="fas fa-times me-2"></i>Clear Filters
-                                </button>
+                                <select class="form-select" id="sortFilter">
+                                    <option value="">Sort by (None)</option>
+                                    <option value="price">Price</option>
+                                    <option value="liquidity_usd">Liquidity (TVL)</option>
+                                    <option value="volume_24h">Volume (24h)</option>
+                                </select>
                             </div>
                         </div>
 
@@ -183,7 +176,9 @@
                                     {% if pools %}
                                     {% for pool in pools %}
                                     <tr class="pool-row" data-dex="{{ pool.dex }}" data-tokena="{{ pool.tokenA.mint }}"
-                                        data-tokenb="{{ pool.tokenB.mint }}">
+                                        data-tokenb="{{ pool.tokenB.mint }}" data-pool-address="{{ pool.pool_address }}"
+                                        data-price="{{ pool.price }}" data-volume_24h="{{ pool.volume_24h }}"
+                                        data-liquidity_usd="{{ pool.liquidity_usd }}">
                                         <td>
                                             <div>
                                                 <span class="badge bg-primary">{{ pool.tokenA.symbol }}</span>
@@ -195,9 +190,8 @@
                                         </td>
                                         <td>
                                             <span
-                                                class="badge bg-{{ 'success' if pool.dex == 'Raydium' else 'info' if pool.dex == 'Orca' else 'warning' }}">
-                                                {{ pool.dex }}
-                                            </span>
+                                                class="badge bg-{{ 'success' if pool.dex == 'Raydium' else 'info' if pool.dex == 'Orca' else 'warning' }}">{{
+                                                pool.dex }}</span>
                                         </td>
                                         <td>
                                             <small class="text-muted">{{ pool.pool_address[:20] }}...</small>
@@ -222,8 +216,8 @@
                                     {% else %}
                                     <tr>
                                         <td colspan="7" class="text-center text-muted py-4">
-                                            <i class="fas fa-info-circle me-2"></i>
-                                            No pools found. Add some token addresses to get started!
+                                            <i class="fas fa-info-circle me-2"></i>No pools found. Add some token
+                                            addresses to get started!
                                         </td>
                                     </tr>
                                     {% endif %}
@@ -243,23 +237,28 @@
                 <strong class="me-auto">Notification</strong>
                 <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
             </div>
-            <div class="toast-body" id="toastMessage">
-            </div>
+            <div class="toast-body" id="toastMessage"></div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
-    <script src="/socket.io/socket.io.js"></script>
     <script>
-        // WebSocket: Listen for pool updates
-        const socket = io();
-        socket.on('pools_updated', function () {
-            // When server notifies, fetch new pools and update UI
-            if (typeof refreshPools === 'function') {
-                refreshPools();
-            }
+        document.addEventListener('DOMContentLoaded', function () {
+            const socket = io();
+            socket.on('pools_updated', (data) => {
+                if (typeof updatePoolsTableDisplay === 'function') {
+                    updatePoolsTableDisplay(data.pools);
+                    applyFilters(); // Áp dụng filter ngay sau khi cập nhật
+                }
+            });
+
+            document.getElementById('refreshPools').addEventListener('click', () => {
+                if (typeof refreshPools === 'function') {
+                    refreshPools();
+                }
+            });
         });
     </script>
 </body>

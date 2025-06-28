@@ -54,4 +54,3 @@ def get_meteora_pools(token_list: Optional[List[str]] = None) -> List[Dict]:
             })
     
     return results
-

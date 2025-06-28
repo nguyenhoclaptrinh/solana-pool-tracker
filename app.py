@@ -1,49 +1,3 @@
-# # app.py
-# from flask import Flask, render_template, request, jsonify
-# import json
-# from pool_fetcher.raydium import get_raydium_pools
-# from pool_fetcher.orca import get_orca_pools
-# from pool_fetcher.meteora import get_meteora_pools
-
-# app = Flask(__name__)
-
-# TOKENS_FILE = "D:\solana-pool-tracker-main\solana-pool-tracker-main\solana-pool-tracker\data\tokens.json"
-# POOLS_FILE = "D:\solana-pool-tracker-main\solana-pool-tracker-main\solana-pool-tracker\data\pools.json"
-
-# @app.route('/')
-# def index():
-#     return render_template('index.html')
-
-# @app.route('/add-token', methods=['POST'])
-# def add_token():
-#     new_token = request.json
-#     with open(TOKENS_FILE, 'r+') as f:
-#         tokens = json.load(f)
-#         tokens.append(new_token)
-#         f.seek(0)
-#         json.dump(tokens, f, indent=2)
-#     return {'message': 'Token added'}, 200
-
-# @app.route('/api/pools')
-# def get_pools():
-#     with open(TOKENS_FILE) as f:
-#         tokens = json.load(f)
-#     token_list = [t["mint"] for t in tokens]
-#     pools = (
-#         get_raydium_pools(token_list)
-#         + get_orca_pools(token_list)
-#         + get_meteora_pools(token_list)
-#     )
-#     with open(POOLS_FILE, 'w') as f:
-#         json.dump(pools, f, indent=2)
-#     return jsonify(pools)
-
-# if __name__ == '__main__':
-#     app.run(debug=True)
-
-
-
-
 from flask import Flask, render_template, request, jsonify
 import json
 import os
@@ -54,7 +8,7 @@ from flask_socketio import SocketIO
 from pool_fetcher.raydium import get_raydium_pools
 from pool_fetcher.orca import get_orca_pools
 from pool_fetcher.meteora import get_meteora_pools
-    
+
 app = Flask(__name__)
 socketio = SocketIO(app)
 
@@ -62,10 +16,9 @@ TOKENS_FILE = 'data/tokens.txt'
 POOLS_RAYDIUM_FILE = 'data/pools_raydium.json'
 POOLS_ORCA_FILE = 'data/pools_orca.json'
 POOLS_METEORA_FILE = 'data/pools_meteora.json'
-UPDATE_INTERVAL = 5
+UPDATE_INTERVAL = 1
 update_flag = threading.Event()
 
-#Handle DEXes thread
 raydium_lock = threading.Lock()
 orca_lock = threading.Lock()
 meteora_lock = threading.Lock()
@@ -73,11 +26,7 @@ meteora_lock = threading.Lock()
 def load_tokens():
     if os.path.exists(TOKENS_FILE):
         with open(TOKENS_FILE, 'r') as f:
-            tokens = []
-            for line in f.readlines():
-                line = line.strip()
-                if line and not line.startswith('#'):
-                    tokens.append(line)
+            tokens = [line.strip() for line in f.readlines() if line.strip() and not line.startswith('#')]
             return tokens
     return []
 
@@ -98,11 +47,9 @@ def update_raydium_pools(tokens):
         return
     try:
         print(f"[UPDATE] Raydium updating at {datetime.now()}")
-
-        pools = get_raydium_pools(tokens)
+        pools = get_raydium_pools(tokens) if tokens else []
         save_pools_file(pools, POOLS_RAYDIUM_FILE)
-
-        socketio.emit('pools_updated', {'dex': 'Raydium'})
+        socketio.emit('pools_updated', {'dex': 'Raydium', 'pools': load_all_pools(), 'last_updated': datetime.now().isoformat()})
         print(f"[UPDATE] Raydium pools updated at {datetime.now()}")
     except Exception as e:
         print(f"[ERROR] Raydium update error: {e}")
@@ -115,11 +62,9 @@ def update_orca_pools(tokens):
         return
     try:
         print(f"[UPDATE] Orca updating at {datetime.now()}")
-
-        pools = get_orca_pools(tokens)
+        pools = get_orca_pools(tokens) if tokens else []
         save_pools_file(pools, POOLS_ORCA_FILE)
-
-        socketio.emit('pools_updated', {'dex': 'Orca'})
+        socketio.emit('pools_updated', {'dex': 'Orca', 'pools': load_all_pools(), 'last_updated': datetime.now().isoformat()})
         print(f"[UPDATE] Orca pools updated at {datetime.now()}")
     except Exception as e:
         print(f"[ERROR] Orca update error: {e}")
@@ -132,11 +77,9 @@ def update_meteora_pools(tokens):
         return
     try:
         print(f"[UPDATE] Meteora updating at {datetime.now()}")
-
-        pools = get_meteora_pools(tokens)
+        pools = get_meteora_pools(tokens) if tokens else []
         save_pools_file(pools, POOLS_METEORA_FILE)
-
-        socketio.emit('pools_updated', {'dex': 'Meteora'})
+        socketio.emit('pools_updated', {'dex': 'Meteora', 'pools': load_all_pools(), 'last_updated': datetime.now().isoformat()})
         print(f"[UPDATE] Meteora pools updated at {datetime.now()}")
     except Exception as e:
         print(f"[ERROR] Meteora update error: {e}")
@@ -151,7 +94,12 @@ def background_updater():
         if tokens:
             threading.Thread(target=update_raydium_pools, args=(tokens,), daemon=True).start()
             threading.Thread(target=update_orca_pools, args=(tokens,), daemon=True).start()
-            #threading.Thread(target=update_meteora_pools, args=(tokens,), daemon=True).start()
+            threading.Thread(target=update_meteora_pools, args=(tokens,), daemon=True).start()
+        else:
+            save_pools_file([], POOLS_RAYDIUM_FILE)
+            save_pools_file([], POOLS_ORCA_FILE)
+            save_pools_file([], POOLS_METEORA_FILE)
+            socketio.emit('pools_updated', {'dex': 'All', 'pools': [], 'last_updated': datetime.now().isoformat()})
         time.sleep(UPDATE_INTERVAL)
 
 def load_all_pools():
@@ -161,8 +109,8 @@ def load_all_pools():
             try:
                 with open(fname, 'r') as f:
                     pools.extend(json.load(f))
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[ERROR] Failed to load {fname}: {e}")
     return pools
 
 @app.route('/')
@@ -179,7 +127,6 @@ def add_tokens():
         return jsonify({'error': 'Please enter token addresses'}), 400
     tokens = []
 
-    #Get tokens list
     for line in token_input.split('\n'):
         for token in line.split(','):
             token = token.strip()
@@ -202,7 +149,6 @@ def add_tokens():
 @app.route('/api/pools')
 def api_pools():
     pools = load_all_pools()
-    
     return jsonify({
         'pools': pools,
         'last_updated': datetime.now().isoformat(),
@@ -218,10 +164,8 @@ if __name__ == '__main__':
             f.write('[]')
 
     print("[START] Starting Solana Pool Tracker...")
-
     updater_thread = threading.Thread(target=background_updater, daemon=True)
     updater_thread.start()
-
     print(f"[START] Server starting on http://localhost:5000")
     print(f"[INFO] Auto-update interval: {UPDATE_INTERVAL} seconds")
     socketio.run(app, debug=True, host='0.0.0.0', port=5000)
